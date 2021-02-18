@@ -19,7 +19,7 @@ const run = async () => {
       case 'add': apps.add(app); break;
       case 'deploy': apps.deploy(app); break;
       case 'status': apps.status(app); break;
-      default: apps.app(); break;
+      default: utils.help(); break;
     }
   } else {
     apps.status();

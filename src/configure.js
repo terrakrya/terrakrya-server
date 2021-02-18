@@ -3,12 +3,18 @@ const Configstore = require('configstore');
 const chalk = require('chalk');
 const { existsSync } = require('fs');
 const { exec } = require('shelljs');
+const { appsDir, configDir, configFolderName } = require('./utils');
+
 const packageJson = require('../package.json');
 const ask = require('./ask');
 
-const appsDir = '~/apps/';
-
 const config = new Configstore(packageJson.name);
+
+const checkAppsDir = async () => {
+  if (!existsSync(appsDir)) {
+    exec(`mkdir ${appsDir}`);
+  }
+};
 
 const checkEnviroment = async () => {
   let enviroment = config.get('enviroment');
@@ -32,14 +38,8 @@ const checkInstitution = async () => {
 
 const checkConfigRepository = async () => {
   const enviroment = config.get('enviroment');
-  if (!existsSync(`${appsDir}.apps-config/`)) {
-    exec(`git -C ${appsDir} clone git@github.com:${config.get('institution')}/server-${enviroment}.git .apps-config`);
-  }
-};
-
-const checkAppsDir = async () => {
-  if (!existsSync(appsDir)) {
-    exec(`mkdir ${appsDir}`);
+  if (!existsSync(`${configDir}`)) {
+    exec(`git -C ${appsDir} clone git@github.com:${config.get('institution')}/server-${enviroment}.git ${configFolderName}`);
   }
 };
 
