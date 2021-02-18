@@ -1,0 +1,45 @@
+{
+  "name": "terrakrya-server",
+  "version": "1.0.0",
+  "description": "Deploy, backup and sync scripts for production and stage enviroments for apps using node Node.js + MongoDb + PM2 + Nginx stack.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+ssh://git@github.com/terrakrya/terrakrya-server.git"
+  },
+  "keywords": [
+    "nodejs",
+    "mongodb",
+    "pm2",
+    "backblaze",
+    "nginx",
+    "devops",
+    "deploy",
+    "backup",
+    "sync"
+  ],
+  "author": "Terrakrya",
+  "license": "CC-BY-4.0",
+  "bugs": {
+    "url": "https://github.com/terrakrya/terrakrya-server/issues"
+  },
+  "homepage": "https://github.com/terrakrya/terrakrya-server#readme",
+  "dependencies": {
+    "chalk": "^4.1.0",
+    "clear": "^0.1.0",
+    "clui": "^0.3.6",
+    "configstore": "^5.0.1",
+    "figlet": "^1.5.0",
+    "inquirer": "^7.3.3",
+    "minimist": "^1.2.5",
+    "shelljs": "^0.8.4"
+  },
+  "devDependencies": {
+    "eslint": "^7.20.0",
+    "eslint-config-airbnb-base": "^14.2.1",
+    "eslint-plugin-import": "^2.22.1"
+  }
+}
