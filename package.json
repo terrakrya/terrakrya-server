@@ -1,6 +1,6 @@
 {
   "name": "@terrakrya/server",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Deploy, backup and sync scripts for production and stage enviroments for apps using node Node.js + MongoDb + PM2 + Nginx + Github stack.",
   "main": "index.js",
   "scripts": {
