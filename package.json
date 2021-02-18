@@ -1,10 +1,13 @@
 {
-  "name": "terrakrya-server",
+  "name": "@terrakrya/server",
   "version": "1.0.0",
   "description": "Deploy, backup and sync scripts for production and stage enviroments for apps using node Node.js + MongoDb + PM2 + Nginx + Github stack.",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "bin": {
+    "terrakrya": "./index.js"
   },
   "repository": {
     "type": "git",

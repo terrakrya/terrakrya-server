@@ -22,7 +22,7 @@ const checkEnviroment = async () => {
     enviroment = await ask.enviroment();
     config.set('enviroment', enviroment);
   }
-  console.log(`${chalk.bold('Enviroment: ')} ${enviroment === 'production' ? chalk.green(enviroment) : chalk.orange(enviroment)}`);
+  console.log(`${chalk.bold('Enviroment: ')} ${enviroment === 'production' ? chalk.green(enviroment) : chalk.yellow(enviroment)}`);
   return enviroment;
 };
 
@@ -32,7 +32,7 @@ const checkInstitution = async () => {
     institution = await ask.institution();
     config.set('institution', institution);
   }
-  console.log(`${chalk.bold('institution: ')} ${chalk.green(institution)}`);
+  console.log(`${chalk.bold('Institution/username: ')} ${chalk.yellow(institution)}`);
   return institution;
 };
 

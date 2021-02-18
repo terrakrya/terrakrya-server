@@ -16,13 +16,13 @@ module.exports = {
         },
       },
     ]);
-    return res.institution;
+    return res.enviroment;
   },
   institution: async () => {
     const res = await inquirer.prompt([
       {
         type: 'input',
-        name: 'enviroment',
+        name: 'institution',
         message: 'Insert your Github institution or username where the projects is hosted:',
         validate(value) {
           if (value) {
@@ -32,6 +32,17 @@ module.exports = {
         },
       },
     ]);
-    return res.enviroment;
+    return res.institution;
+  },
+  purge: async () => {
+    const res = await inquirer.prompt([
+      {
+        type: 'confirm',
+        name: 'purge',
+        default: false,
+        message: 'This command will delete all files and configuration. Are you sure you want to continue?',
+      },
+    ]);
+    return res.purge;
   },
 };

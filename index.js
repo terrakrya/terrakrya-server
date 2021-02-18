@@ -11,14 +11,17 @@ const run = async () => {
 
   const params = process.argv;
   const command = params[2];
-  const app = params[2];
+  const app = params[3];
 
   if (command) {
     switch (command) {
       case 'apps': apps.list(); break;
       case 'add': apps.add(app); break;
       case 'deploy': apps.deploy(app); break;
+      case 'backup': apps.backup(app); break;
+      case 'sync': apps.sync(app); break;
       case 'status': apps.status(app); break;
+      case 'purge': await utils.purge(); break;
       default: utils.help(); break;
     }
   } else {

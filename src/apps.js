@@ -2,44 +2,78 @@
 const chalk = require('chalk');
 const Configstore = require('configstore');
 const {
-  existsSync, copyFileSync, rmSync, linkSync,
+  existsSync, copyFileSync, rmSync, linkSync, mkdirSync,
 } = require('fs');
-const { exec } = require('shelljs');
+const { exec, cd } = require('shelljs');
 const packageJson = require('../package.json');
-const { appsDir, configDir } = require('./utils');
+const {
+  homeDir, appsDir, configDir, dumpsDir,
+} = require('./utils');
 
 const config = new Configstore(packageJson.name);
 
-const getApps = () => config.get('apps') || [];
-
-const list = () => {
-  const apps = getApps();
-  if (apps.length > 0) {
-    console.log(chalk.bold('Configured apps:'));
-    apps.forEach((app) => {
-      console.log(app);
-    });
-  } else {
-    console.log(chalk.red('Theres no one configured apps.'));
-  }
+const currentDate = () => {
+  const d = new Date();
+  return [d.getFullYear(), d.getMonth(), d.getMonth(), d.getHours() + d.getMinutes()].join();
 };
-const appExists = (appName) => getApps.find((app) => app === appName)
-    && existsSync(appsDir + appName);
+const list = () => {
+  console.log(chalk.bold('Configured apps: '));
+  cd(appsDir);
+  exec('ls');
+};
+const appExists = (appName) => existsSync(appsDir + appName);
 const add = (appName) => {
   if (appExists(appName)) {
     console.log(chalk.red(`The app ${appName} is already registered.`));
   } else {
-    const apps = getApps();
-    apps.push(appName);
-    config.set('apps', appName);
     exec(`git -C ${appsDir} clone git@github.com:${config.get('institution')}/${appName}.git`);
+    cd(`${appsDir}${appName}/`);
+    exec('git checkout main');
+    exec('git pull');
+    cd(homeDir);
   }
+  console.log(chalk.green(`App ${appName} executed successfuly!`));
+};
+const sync = (appName) => {
+  const institution = config.get('institution');
+  if (!existsSync(`${dumpsDir}`)) {
+    mkdirSync(dumpsDir);
+  }
+  const appDumpsDir = `${dumpsDir}/${appName}/`;
+  if (!existsSync(`${dumpsDir}`)) {
+    mkdirSync(appDumpsDir);
+  }
+  exec(`backblaze-b2 sync --replaceNewer b2://${institution}/${appName}/dumps/ ${appDumpsDir}`);
+  exec(`backblaze-b2 sync --replaceNewer b2://${institution}/${appName}/uploads/ ${appsDir}/${appName}/api/uploads/`);
+  exec(`mongorestore --archive=${appDumpsDir}${appName}-latest.zip --gzip --db ${appName} --drop`);
+  console.log(chalk.green('Backup executed successfuly!'));
+};
+
+const backup = (appName) => {
+  const institution = config.get('institution');
+  const date = currentDate();
+  const uploadsDir = `${appsDir + appName}/api/uploads/`;
+  const dumpDir = `${dumpsDir + appName}/`;
+  const dumpFile = `${dumpDir}${appName}-${date}.zip`;
+  exec(`mongodump -d $APP --gzip --archive=${dumpFile}`);
+  copyFileSync(dumpFile, `${appName}-latest.zip`);
+  rmSync(`${uploadsDir}${appName}-uploads.zip`);
+  exec(`zip -r ${uploadsDir}${appName}-uploads.zip ${uploadsDir}*`);
+  exec(`backblaze-b2 sync --keepDays 0 --replaceNewer ${dumpDir} "b2://${institution}/${appName}/dumps/`);
+  exec(`backblaze-b2 sync --keepDays 0 --replaceNewer ${uploadsDir} "b2://${institution}/${appName}/uploads/`);
+  console.log(chalk.green('Backup executed successfuly!'));
 };
 const deploy = (appName) => {
-  const appConfigDir = configDir + appName;
-  const appDir = appsDir + appName;
+  const appConfigDir = `${configDir + appName}/`;
+  const appDir = `${appsDir + appName}/`;
   const enviroment = config.get('enviroment');
   const institution = config.get('institution');
+
+  if (!appName) {
+    console.log(chalk.red('Please insert the app name in the second param'));
+    return;
+  }
+
   if (!existsSync(appConfigDir)) {
     console.log(chalk.red(`Theres no configuration folder for this app in https://github.com/${institution}/server-${enviroment}. You should create one!`));
     return;
@@ -49,51 +83,50 @@ const deploy = (appName) => {
     add(appName);
   }
 
-  rmSync(`/etc/nginx/sites-available/${appName}.vhost`);
-  rmSync(`/etc/nginx/sites-enabled/${appName}.vhost`);
-  copyFileSync(`${appConfigDir}/nginx.vhost`, `/etc/nginx/sites-available/${appName}.vhost`);
+  if (existsSync(`/etc/nginx/sites-available/${appName}.vhost`)) {
+    rmSync(`/etc/nginx/sites-available/${appName}.vhost`);
+  }
+  if (existsSync(`/etc/nginx/sites-enabled/${appName}.vhost`)) {
+    rmSync(`/etc/nginx/sites-enabled/${appName}.vhost`);
+  }
+  copyFileSync(`${appConfigDir}nginx.vhost`, `/etc/nginx/sites-available/${appName}.vhost`);
   linkSync(`/etc/nginx/sites-available/${appName}.vhost`, `/etc/nginx/sites-enabled/${appName}.vhost`);
   exec('sudo service nginx restart');
 
-  copyFileSync(`${appConfigDir}/pm2.config.js`, `${appDir}/pm2.config.js`);
-  if (!existsSync(`${appConfigDir}/.env`)) {
-    copyFileSync(`${appConfigDir}/.env`, `${appDir}/.env`);
+  copyFileSync(`${appConfigDir}pm2.config.js`, `${appDir}pm2.config.js`);
+  if (!existsSync(`${appConfigDir}.env`)) {
+    copyFileSync(`${appConfigDir}.env`, `${appDir}.env`);
   }
 
   if (enviroment === 'stage') {
     // sync
+    sync(appName);
+  } else {
+    backup(appName);
   }
-  // sudo cp -f ./$APP/$APP.vhost /etc/nginx/sites-available/$APP.vhost
-  // sudo rm /etc/nginx/sites-enabled/$APP.vhost
-  // sudo ln -s /etc/nginx/sites-available/$APP.vhost /etc/nginx/sites-enabled/$APP.vhost
-  // sudo service nginx restart
-
-  // cp ./$APP/pm2.config.js ../$APP/pm2.config.js
-  // cp ./$APP/.env ../$APP/.env
-
-  // ./sync.sh $APP
-
-  // cd ../$APP
-  // pm2 stop pm2.config.js
-  // git pull
-  // yarn
-  // yarn build
-  // yarn prepare_stage
-  // yarn seed
-  // pm2 start pm2.config.js
-  // pm2 startup
-  // pm2 save
+  cd(appDir);
+  exec('pm2 stop pm2.config.js');
+  exec('git pull');
+  exec('yarn');
+  exec('yarn build');
+  exec('yarn seed');
+  exec('pm2 start pm2.config.js');
+  exec('pm2 startup');
+  exec('pm2 save');
+  console.log(chalk.green('Deploy executed successfuly!'));
 };
+
 const status = (app) => {
   list();
   exec(`pm2 status ${app}`);
 };
 
 module.exports = {
-  getApps,
   list,
   appExists,
   add,
   deploy,
   status,
+  sync,
+  backup,
 };
