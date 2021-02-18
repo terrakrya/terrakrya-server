@@ -24,7 +24,11 @@
     "backup",
     "sync"
   ],
-  "author": "Terrakrya",
+  "author": {
+    "name": "Terrakrya",
+    "email": "suporte@terrakrya.com",
+    "url": "http://www.terrakrya.com/"
+  },
   "license": "CC-BY-4.0",
   "bugs": {
     "url": "https://github.com/terrakrya/terrakrya-server/issues"

@@ -22,6 +22,7 @@ const run = async () => {
       case 'sync': apps.sync(app); break;
       case 'status': apps.status(app); break;
       case 'purge': await utils.purge(); break;
+      case 'help': utils.help(); break;
       default: utils.help(); break;
     }
   } else {
