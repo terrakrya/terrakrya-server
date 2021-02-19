@@ -5,24 +5,29 @@ const {
   existsSync, copyFileSync, rmSync, linkSync, mkdirSync,
 } = require('fs');
 const { exec, cd } = require('shelljs');
+const ask = require('./ask');
 const packageJson = require('../package.json');
 const {
-  homeDir, appsDir, configDir, dumpsDir,
+  homeDir, appsDir, configDir, dumpsDir, updateConf,
 } = require('./utils');
 
 const config = new Configstore(packageJson.name);
 
 const currentDate = () => {
   const d = new Date();
-  return [d.getFullYear(), d.getMonth(), d.getMonth(), d.getHours() + d.getMinutes()].join();
+  return [d.getFullYear(), d.getMonth(), d.getMonth(), d.getHours() + d.getMinutes()].join('-');
 };
 const list = () => {
   console.log(chalk.bold('Configured apps: '));
   cd(appsDir);
   exec('ls');
 };
+const appCert = async () => {
+  const domain = await ask.appDomain();
+  exec(`sudo certbot --nginx --agree-tos -d ${domain} -m ${config.get('email') || 'suporte@terrakrya.com'}`);
+};
 const appExists = (appName) => existsSync(appsDir + appName);
-const add = (appName) => {
+const add = async (appName) => {
   if (appExists(appName)) {
     console.log(chalk.red(`The app ${appName} is already registered.`));
   } else {
@@ -31,6 +36,7 @@ const add = (appName) => {
     exec('git checkout main');
     exec('git pull');
     cd(homeDir);
+    await appCert();
   }
   console.log(chalk.green(`App ${appName} executed successfuly!`));
 };
@@ -55,7 +61,7 @@ const backup = (appName) => {
   const uploadsDir = `${appsDir + appName}/api/uploads/`;
   const dumpDir = `${dumpsDir + appName}/`;
   const dumpFile = `${dumpDir}${appName}-${date}.zip`;
-  exec(`mongodump -d $APP --gzip --archive=${dumpFile}`);
+  exec(`mongodump -d ${appName} --gzip --archive=${dumpFile}`);
   copyFileSync(dumpFile, `${appName}-latest.zip`);
   rmSync(`${uploadsDir}${appName}-uploads.zip`);
   exec(`zip -r ${uploadsDir}${appName}-uploads.zip ${uploadsDir}*`);
@@ -63,7 +69,8 @@ const backup = (appName) => {
   exec(`backblaze-b2 sync --keepDays 0 --replaceNewer ${uploadsDir} "b2://${institution}/${appName}/uploads/`);
   console.log(chalk.green('Backup executed successfuly!'));
 };
-const deploy = (appName) => {
+const deploy = async (appName) => {
+  updateConf();
   const appConfigDir = `${configDir + appName}/`;
   const appDir = `${appsDir + appName}/`;
   const enviroment = config.get('enviroment');
@@ -80,7 +87,7 @@ const deploy = (appName) => {
   }
 
   if (!appExists(appName)) {
-    add(appName);
+    await add(appName);
   }
 
   if (existsSync(`/etc/nginx/sites-available/${appName}.vhost`)) {
@@ -94,7 +101,7 @@ const deploy = (appName) => {
   exec('sudo service nginx restart');
 
   copyFileSync(`${appConfigDir}pm2.config.js`, `${appDir}pm2.config.js`);
-  if (!existsSync(`${appConfigDir}.env`)) {
+  if (existsSync(`${appConfigDir}.env`)) {
     copyFileSync(`${appConfigDir}.env`, `${appDir}.env`);
   }
 
@@ -129,4 +136,5 @@ module.exports = {
   status,
   sync,
   backup,
+  appCert,
 };

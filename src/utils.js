@@ -25,16 +25,17 @@ module.exports = {
         figlet.textSync('Terrakrya Server', { horizontalLayout: 'full' }),
       ),
     );
+    console.log(`Version ${packageJson.version}`);
   },
   purge: async () => {
-    const confirmed = await ask.purge();
+    const confirmed = await ask.confirmPurge();
     if (confirmed) {
       config.clear();
       rmdirSync(appsDir, { recursive: true });
       console.log(chalk.green('Purge executed successfuly!'));
     }
   },
-  updateConf: async () => {
+  updateConf: () => {
     cd(configDir);
     exec('git pull');
   },

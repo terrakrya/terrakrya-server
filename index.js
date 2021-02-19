@@ -18,10 +18,11 @@ const run = async () => {
     switch (command) {
       case 'apps': apps.list(); break;
       case 'add': apps.add(app); break;
-      case 'deploy': apps.deploy(app); break;
+      case 'deploy': await apps.deploy(app); break;
       case 'backup': apps.backup(app); break;
       case 'sync': apps.sync(app); break;
       case 'status': apps.status(app); break;
+      case 'cert': await apps.appCert(); break;
       case 'purge': await utils.purge(); break;
       case 'help': utils.help(); break;
       default: utils.help(); break;
@@ -29,6 +30,7 @@ const run = async () => {
   } else {
     apps.status();
   }
+  process.exit();
 };
 
 run();

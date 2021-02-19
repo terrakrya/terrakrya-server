@@ -2,21 +2,30 @@
 
 Deploy, backup and sync scripts for production and stage enviroments for apps using node Node.js + MongoDb + PM2 + Nginx + Github stack.
 
-## Requirements
+## Install dependencies
 
 ```
-apt update
 curl -fsSL https://deb.nodesource.com/setup_current.x | sudo -E bash -
-sudo apt install -y nodejs
-sudo apt install gnupg
-sudo apt install mongodb -y
-apt install nginx -y
+
+sudo snap install core
+sudo snap refresh core
+sudo apt-get remove certbot
+sudo snap install --classic certbot
+sudo ln -s /snap/bin/certbot /usr/bin/certbot
+
+sudo apt update
+sudo apt install -y nodejs gnupg mongodb nginx certbot python3-certbot-nginx backblaze-b2 unzip python2 build-essential
+npm i -g yarn pm2
+sudo fuser -k 80/tcp
+sudo fuser -k 443/tcp
+
 ```
 
 # Installation
 ```
-npm i @terrakrya/server -g
+npm i @terrakrya/server@latest -g
 ```
+
 ## commands
 ```
 ## show apps status
